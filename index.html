@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distribuição de Tokens</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Distribuição de Tokens por Referência</h1>
+        
+        <!-- Conectar Carteira -->
+        <button id="connectWallet">Conectar Carteira</button>
+        
+        <!-- Informações do Usuário -->
+        <div id="userInfo" class="hidden">
+            <p>Endereço conectado: <span id="userAddress"></span></p>
+            <p>Saldo de Tokens no Contrato: <span id="contractBalance"></span></p>
+            <p>Seu Link de Referência: <a id="referralLink" target="_blank"></a></p>
+            <div id="qrcode"></div> <!-- Elemento para o QR Code -->
+        </div>
+
+        <!-- Formulário de Registro -->
+        <div id="registerForm" class="hidden">
+            <h2>Registrar com Referenciador</h2>
+            <input type="text" id="referrerAddress" placeholder="Endereço do Referenciador">
+            <button id="registerButton">Registrar</button>
+        </div>
+
+        <!-- Estatísticas de Referências -->
+        <div id="referralStats" class="hidden">
+            <h2>Estatísticas de Referências</h2>
+            <p>Total de Referenciados: <span id="totalReferrals"></span></p>
+            <p>Total de Tokens Ganhos: <span id="totalTokensEarned"></span></p>
+        </div>
+
+        <!-- Histórico de Referências -->
+        <div id="referralHistory" class="hidden">
+            <h2>Histórico de Referências</h2>
+            <button id="exportButton">Exportar Histórico como CSV</button>
+            <ul id="referralList"></ul>
+        </div>
+
+        <!-- Mensagens de Status -->
+        <p id="statusMessage"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
