@@ -1,10 +1,3 @@
-// Configurações do Telegram
-const telegramBotUsername = "@dropautentbot"; // Exemplo: @meubot
-
-
-
-// Restante do código (conectar carteira, registrar usuário, etc.)...
-
 // Configurações
 const contractAddress = "0x0D47699aeeFA93Bf25daFd5eC8cC973Dd239C8a0"; // Substitua pelo endereço do seu contrato
 const abi = [
@@ -70,6 +63,10 @@ const abi = [
     }
 ];
 const baseUrl = window.location.href; // URL base da plataforma
+
+const TELEGRAM_BOT_TOKEN = "8102052298:AAEdJ5A8VC5QMWzci4rFUMOqbl319n_T11A";
+const TELEGRAM_GROUP_ID = "-1002178729694";
+
 // Elementos da página
 const connectWalletButton = document.getElementById("connectWallet");
 const userInfo = document.getElementById("userInfo");
@@ -77,13 +74,10 @@ const userAddress = document.getElementById("userAddress");
 const contractBalance = document.getElementById("contractBalance");
 const referralLink = document.getElementById("referralLink");
 const qrcodeElement = document.getElementById("qrcode");
-const telegramVerification = document.getElementById("telegramVerification");
-const verifyTelegramButton = document.getElementById("verifyTelegramButton");
-const telegramStatus = document.getElementById("telegramStatus");
-const loadingSpinner = document.getElementById("loadingSpinner");
 const registerForm = document.getElementById("registerForm");
 const referrerAddressInput = document.getElementById("referrerAddress");
 const registerButton = document.getElementById("registerButton");
+const telegramUsernameInput = document.getElementById("telegramUsername");
 const totalReferralsElement = document.getElementById("totalReferrals");
 const totalTokensEarnedElement = document.getElementById("totalTokensEarned");
 const referralList = document.getElementById("referralList");
@@ -94,52 +88,8 @@ let web3;
 let contract;
 let userAccount;
 
-// Função para verificar a associação no Telegram
-async function verifyTelegramMembership(userId) {
-    const url = `https://api.telegram.org/bot${telegramBotToken}/getChatMember?chat_id=${telegramGroupId}&user_id=${userId}`;
-
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.ok && (data.result.status === "member" || data.result.status === "administrator" || data.result.status === "creator")) {
-            telegramStatus.textContent = "Verificação bem-sucedida!";
-            registerForm.classList.remove("hidden"); // Libera o formulário de registro
-        } else {
-            telegramStatus.textContent = "Você não é membro do grupo.";
-        }
-    } catch (error) {
-        telegramStatus.textContent = "Erro ao verificar a associação.";
-    }
-}
-
-// Redirecionar para o Telegram
-verifyTelegramButton.addEventListener("click", () => {
-    telegramStatus.textContent = "Redirecionando para o Telegram...";
-    loadingSpinner.classList.remove("hidden");
-    window.location.href = `https://t.me/${telegramBotUsername}?start=verify`;
-});
-
-// Capturar o ID do usuário e o token da URL
-const urlParams = new URLSearchParams(window.location.search);
-const telegramUserId = urlParams.get("telegram_user_id");
-const token = urlParams.get("token");
-
-if (telegramUserId && token) {
-    loadingSpinner.classList.remove("hidden");
-    telegramStatus.textContent = "Verificando token...";
-    fetch(`https://drop2-15x0.onrender.com/verify-token?userId=${telegramUserId}&token=${token}`)
-        .then(response => response.json())
-        .then(data => {
-            loadingSpinner.classList.add("hidden");
-            if (data.valid) {
-                telegramStatus.textContent = "Token válido. Verificando associação...";
-                verifyTelegramMembership(telegramUserId);
-            } else {
-                telegramStatus.textContent = "Token inválido.";
-            }
-        });
-}
+// Desativa o botão de registro por padrão
+registerButton.disabled = true;
 
 // Conectar à carteira
 connectWalletButton.addEventListener("click", async () => {
@@ -151,9 +101,6 @@ connectWalletButton.addEventListener("click", async () => {
             userAccount = accounts[0];
             userAddress.textContent = userAccount;
             userInfo.classList.remove("hidden");
-
-            // Mostrar a verificação do Telegram
-            telegramVerification.classList.remove("hidden");
 
             // Inicializar contrato
             contract = new web3.eth.Contract(abi, contractAddress);
@@ -171,12 +118,15 @@ connectWalletButton.addEventListener("click", async () => {
             loadReferralStats();
 
             // Verificar se há um referenciador no link
+            const urlParams = new URLSearchParams(window.location.search);
             const referrerAddress = urlParams.get("ref");
 
             if (referrerAddress && web3.utils.isAddress(referrerAddress)) {
                 referrerAddressInput.value = referrerAddress; // Preenche o campo automaticamente
                 statusMessage.textContent = `Referenciador detectado: ${referrerAddress}`;
             }
+
+            registerForm.classList.remove("hidden");
         } catch (error) {
             statusMessage.textContent = "Erro ao conectar à carteira: " + error.message;
         }
@@ -185,12 +135,43 @@ connectWalletButton.addEventListener("click", async () => {
     }
 });
 
-
 // Atualizar saldo do contrato
 async function updateContractBalance() {
     const balance = await contract.methods.contractBalance().call();
     contractBalance.textContent = web3.utils.fromWei(balance, "ether") + " tokens";
 }
+// Verificar se usuário está no grupo do Telegram pelo @username
+async function isUserInGroup(username) {
+    try {
+        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${TELEGRAM_GROUP_ID}&user_id=${username}`);
+        const data = await response.json();
+        return data.ok && ["member", "administrator", "creator"].includes(data.result.status);
+    } catch (error) {
+        console.error("Erro ao verificar grupo:", error);
+        return false;
+    }
+}
+
+// Monitorar input do Telegram e ativar o botão de registro
+telegramUsernameInput.addEventListener("input", async () => {
+    const username = telegramUsernameInput.value.replace("@", ""); // Remove o "@" se o usuário digitar
+
+    if (username.length > 0) {
+        statusMessage.textContent = "Verificando participação no grupo...";
+        const isMember = await isUserInGroup(username);
+
+        if (isMember) {
+            registerButton.disabled = false; // Ativa o botão se for membro
+            statusMessage.textContent = "Verificação concluída! Você pode se registrar.";
+        } else {
+            registerButton.disabled = true; // Mantém desativado se não for membro
+            statusMessage.textContent = "Você precisa ser membro do grupo para se registrar!";
+        }
+    } else {
+        registerButton.disabled = true;
+        statusMessage.textContent = "";
+    }
+});
 
 // Registrar usuário
 registerButton.addEventListener("click", async () => {
